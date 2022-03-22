@@ -1,8 +1,7 @@
 import 'dart:async';
-
+import 'package:location/location.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:frakton_task/Constants/constants.dart';
 import 'package:frakton_task/Screens/Authentication/login_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -16,85 +15,46 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // var latitude = 0.0;
-  // var longitude = 0.0;
-  //
-  // Future<Position?> determinePosition() async {
-  //   bool serviceEnabled;
-  //   LocationPermission permission;
-  //   permission = await Geolocator.requestPermission();
-  //   serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  //   if (!serviceEnabled) {
-  //     Fluttertoast.showToast(
-  //         msg: 'Si prega di abilitare il servizio di localizzazione');
-  //   }
-  //   permission = await Geolocator.checkPermission();
-  //
-  //   Position position = await Geolocator.getCurrentPosition(
-  //       forceAndroidLocationManager: true,
-  //       desiredAccuracy: LocationAccuracy.high);
-  //
-  //   longitude = position.longitude;
-  //   latitude = position.latitude;
-  //
-  //   print(longitude);
-  //   print(latitude);
-  //   return null;
-  // }
+  final LatLng _initialCameraPosition = const LatLng(20.5937, 78.9629);
+  late GoogleMapController _controller;
+  final Location _location = Location();
 
-  final Completer<GoogleMapController> _controller = Completer();
-  late BitmapDescriptor sourceIcon;
-  late BitmapDescriptor destinationIcon;
-  Set<Marker> markers = <Marker>{};
-
-  late LatLng currentLocation;
-
-  @override
-  void initState() {
-    super.initState();
-    setInitialLocation();
-    setSourceMarkerIcon();
-  }
-
-  void setSourceMarkerIcon() {
-    sourceIcon = BitmapDescriptor.defaultMarker;
-  }
-
-  void setInitialLocation() {
-    currentLocation = LatLng(
-      SOURCE_LOCATION.latitude,
-      SOURCE_LOCATION.longitude,
-    );
+  void _onMapCreated(GoogleMapController _cntrl) {
+    _controller = _cntrl;
+    _location.onLocationChanged.listen((l) {
+      _controller.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(
+              l.latitude!,
+              l.longitude!,
+            ),
+            zoom: 15,
+          ),
+        ),
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    CameraPosition initialCameraPostion = const CameraPosition(
-      zoom: Constants.CAMERA_ZOOM,
-      tilt: Constants.CAMERA_TILT,
-      bearing: Constants.CAMERA_BEARING,
-      target: SOURCE_LOCATION,
-    );
-
     return SafeArea(
       child: Scaffold(
-          body: Stack(
-        children: [
-          Positioned.fill(
-            child: GoogleMap(
-              myLocationEnabled: true,
-              compassEnabled: false,
-              tiltGesturesEnabled: false,
-              markers: markers,
-              mapType: MapType.normal,
-              initialCameraPosition: initialCameraPostion,
-              onMapCreated: (GoogleMapController controller) {
-                _controller.complete(controller);
-              },
-            ),
+        body: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          child: Stack(
+            children: [
+              GoogleMap(
+                initialCameraPosition: CameraPosition(target: _initialCameraPosition),
+                mapType: MapType.normal,
+                onMapCreated: _onMapCreated,
+                myLocationEnabled: true,
+              ),
+            ],
           ),
-        ],
-      )),
+        ),
+      ),
     );
   }
 
