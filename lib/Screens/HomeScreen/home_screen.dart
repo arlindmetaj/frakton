@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //final Location _location = Location();
 
   double zoomVal = 5.0;
+  bool isFavourite = true;
 
   @override
   Widget build(BuildContext context) {
@@ -59,8 +60,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Stack(
           children: [
             googleMap(context),
-            // zoomMinusFunction(),
-            // zoomPlusFunction(),
             _buildFavorites(),
           ],
         ),
@@ -214,6 +213,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
+        Align(
+          alignment: Alignment.center,
+          child: InkWell(
+            onTap: () {
+              toggleFavorite();
+            },
+            child: isFavourite
+                ? const Icon(
+                    Icons.favorite_border,
+                    color: Colors.red,
+                    size: 30,
+                  )
+                : const Icon(
+                    Icons.favorite,
+                    color: Colors.red,
+                    size: 30,
+                  ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Text(
@@ -301,6 +319,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  toggleFavorite() {
+    setState(() {
+      isFavourite = !isFavourite;
+    });
   }
 }
 

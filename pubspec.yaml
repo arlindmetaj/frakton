@@ -44,6 +44,7 @@ dependencies:
   geocoding: ^2.0.4
   font_awesome_flutter: ^10.0.0
   flutter_dialogs: ^2.1.1
+  shared_preferences: ^2.0.13
 
 dev_dependencies:
   flutter_test:
