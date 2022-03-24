@@ -1,11 +1,16 @@
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dialogs/flutter_dialogs.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:frakton_task/Screens/Authentication/login_screen.dart';
+import 'package:frakton_task/models/fav_restaurant.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -18,10 +23,43 @@ class _HomeScreenState extends State<HomeScreen> {
   final LatLng initialCameraPosition = const LatLng(41.327953, 19.819025);
   final Completer<GoogleMapController> _controller2 = Completer();
 
-  //final Location _location = Location();
-
   double zoomVal = 5.0;
-  bool isFavourite = true;
+
+  List<Restaurant> favRestaurants = [
+    Restaurant(
+      "https://eachlittleworld.typepad.com/.a/6a00e554503eee883301a73d98a83c970d-800wi",
+      40.738380,
+      -73.988426,
+      "Gramercy Tavern",
+    ),
+    Restaurant(
+      "https://lh5.googleusercontent.com/p/AF1QipMKRN-1zTYMUVPrH-CcKzfTo6Nai7wdL7D8PMkt=w340-h160-k-no",
+      40.761421,
+      -73.981667,
+      "Le Bernardin",
+    ),
+    Restaurant(
+      "https://images.unsplash.com/photo-1504940892017-d23b9053d5d4?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=500&q=60",
+      40.732128,
+      -73.999619,
+      "Blue Hill",
+    )
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavourites();
+  }
+
+  _loadFavourites() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    for (var i = 0; i < favRestaurants.length; i++) {
+      String key =
+          favRestaurants[0].lat.toString() + '--' + favRestaurants[0].long.toString();
+      favRestaurants[0].isFavourite = sharedPreferences.getBool(key) ?? false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,8 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Align(
       alignment: Alignment.topLeft,
       child: IconButton(
-          icon: const Icon(FontAwesomeIcons.magnifyingGlassMinus,
-              color: Color(0xff6200ee)),
+          icon: const Icon(
+            FontAwesomeIcons.magnifyingGlassMinus,
+            color: Color(0xff6200ee),
+          ),
           onPressed: () {
             zoomVal--;
             _minus(zoomVal);
@@ -110,8 +150,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Align(
       alignment: Alignment.topRight,
       child: IconButton(
-          icon: const Icon(FontAwesomeIcons.magnifyingGlassPlus,
-              color: Color(0xff6200ee)),
+          icon: const Icon(
+            FontAwesomeIcons.magnifyingGlassPlus,
+            color: Color(0xff6200ee),
+          ),
           onPressed: () {
             zoomVal++;
             _plus(zoomVal);
@@ -143,29 +185,17 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 10.0),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: _boxes(
-                  "https://eachlittleworld.typepad.com/.a/6a00e554503eee883301a73d98a83c970d-800wi",
-                  40.738380,
-                  -73.988426,
-                  "Gramercy Tavern"),
+              child: _boxes(favRestaurants[0]),
             ),
             const SizedBox(width: 10.0),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: _boxes(
-                  "https://lh5.googleusercontent.com/p/AF1QipMKRN-1zTYMUVPrH-CcKzfTo6Nai7wdL7D8PMkt=w340-h160-k-no",
-                  40.761421,
-                  -73.981667,
-                  "Le Bernardin"),
+              child: _boxes(favRestaurants[1]),
             ),
             const SizedBox(width: 10.0),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: _boxes(
-                  "https://images.unsplash.com/photo-1504940892017-d23b9053d5d4?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=500&q=60",
-                  40.732128,
-                  -73.999619,
-                  "Blue Hill"),
+              child: _boxes(favRestaurants[2]),
             ),
           ],
         ),
@@ -173,10 +203,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _boxes(String _image, double lat, double long, String restaurantName) {
+  Widget _boxes(Restaurant restaurant) {
     return GestureDetector(
       onTap: () {
-        gotoLocation(lat, long);
+        gotoLocation(restaurant.lat, restaurant.long);
       },
       child: FittedBox(
         child: Material(
@@ -194,13 +224,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(24.0),
                   child: Image(
                     fit: BoxFit.fill,
-                    image: NetworkImage(_image),
+                    image: NetworkImage(restaurant.image),
                   ),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: myDetailsContainer1(restaurantName),
+                child: myDetailsContainer1(restaurant),
               ),
             ],
           ),
@@ -209,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget myDetailsContainer1(String restaurantName) {
+  Widget myDetailsContainer1(Restaurant restaurant) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: <Widget>[
@@ -217,9 +247,14 @@ class _HomeScreenState extends State<HomeScreen> {
           alignment: Alignment.center,
           child: InkWell(
             onTap: () {
-              toggleFavorite();
+              toggleFavorite(restaurant);
+              if(restaurant.isFavourite == true){
+                showToast("Added to favorites");
+              } else if(restaurant.isFavourite == false){
+                showToast("Removed from favorites");
+              }
             },
-            child: isFavourite
+            child: restaurant.isFavourite
                 ? const Icon(
                     Icons.favorite_border,
                     color: Colors.red,
@@ -235,11 +270,12 @@ class _HomeScreenState extends State<HomeScreen> {
         Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Text(
-            restaurantName,
+            restaurant.name,
             style: const TextStyle(
-                color: Color(0xff6200ee),
-                fontSize: 24.0,
-                fontWeight: FontWeight.bold),
+              color: Color(0xff6200ee),
+              fontSize: 24.0,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         const SizedBox(height: 5.0),
@@ -321,9 +357,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  toggleFavorite() {
+  toggleFavorite(Restaurant restaurant) async {
+    String key = restaurant.lat.toString() + '--' + restaurant.long.toString();
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    sharedPreferences.setBool(key, !restaurant.isFavourite);
     setState(() {
-      isFavourite = !isFavourite;
+      restaurant.isFavourite = !restaurant.isFavourite;
     });
   }
 }
@@ -405,6 +444,15 @@ void logOutDialog(BuildContext context) {
         ),
       ],
     ),
+  );
+}
+
+void showToast(String msg) {
+  Fluttertoast.showToast(
+    msg: msg,
+    toastLength: Toast.LENGTH_SHORT,
+    gravity: ToastGravity.BOTTOM,
+    timeInSecForIosWeb: 1,
   );
 }
 
